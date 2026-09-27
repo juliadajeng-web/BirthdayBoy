@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bagga's Arcane Rift & Wish Spellbook | From Julia</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=VT323&family=Cinzel+Decorative:wght@700;900&family=Press+Start+2P&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --chalk-white: rgba(240, 245, 250, 0.94);
+            --chalk-yellow: #fef08a;
+            --chalk-emerald: #34d399;
+            --tanjiro-green: #10B981;
+            --slate-bg: #07090e;
+            --slate-board: #11151e;
+            --slate-border: #283244;
+        }
+
+        body {
+            background-color: var(--slate-bg);
+            color: var(--chalk-white);
+            font-family: 'Patrick Hand', cursive;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .font-pixel { font-family: 'VT323', monospace; }
+        .font-retro { font-family: 'Press Start 2P', cursive; }
+        .font-arcane { font-family: 'Cinzel Decorative', cursive; }
+        .font-letter { font-family: 'Caveat', cursive; }
+
+        /* Rift Wizard Chalkboard Panel */
+        .chalk-board {
+            background-color: var(--slate-board);
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 80%),
+                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.02) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255,255,255,0.025) 0%, transparent 50%),
+                linear-gradient(180deg, rgba(255,255,255,0.01) 0%, rgba(0,0,0,0.2) 100%);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.95), 0 20px 40px rgba(0,0,0,0.8);
+            border: 5px solid #232c3d;
+            border-radius: 16px;
+            position: relative;
+        }
+
+        /* Tanjiro Checkered Pattern Trim */
+        .tanjiro-trim {
+            background-color: #030507;
+            background-image: 
+                linear-gradient(45deg, #10B981 25%, transparent 25%), 
+                linear-gradient(-45deg, #10B981 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #10B981 75%), 
+                linear-gradient(-45deg, transparent 75%, #10B981 75%);
+            background-size: 24px 24px;
+            background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+        }
+
+        /* Grid Node Cards */
+        .grid-cell {
+            background-color: rgba(10, 14, 21, 0.92);
+            border: 2px solid var(--slate-border);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .grid-cell:hover {
+            border-color: var(--tanjiro-green);
+            box-shadow: 0 0 22px rgba(16, 185, 129, 0.45);
+            transform: translateY(-4px);
+        }
+
+        .grid-cell.cleared {
+            border-color: #f59e0b;
+            background-color: rgba(28, 38, 54, 0.95);
+        }
+
+        /* Candle Flame Animations */
+        @keyframes flicker {
+            0%, 100% { transform: scale(1) rotate(-1deg); opacity: 1; filter: drop-shadow(0 0 18px #f97316); }
+            25% { transform: scale(1.12, 0.90) rotate(2deg); opacity: 0.95; filter: drop-shadow(0 0 26px #fbbf24); }
+            50% { transform: scale(0.90, 1.10) rotate(-2deg); opacity: 0.92; filter: drop-shadow(0 0 14px #f97316); }
+            75% { transform: scale(1.08, 0.95) rotate(1deg); opacity: 0.98; filter: drop-shadow(0 0 20px #eab308); }
+        }
+
+        .candle-flame {
+            animation: flicker 0.16s infinite alternate;
+            transform-origin: bottom center;
+        }
+
+        @keyframes smokeRise {
+            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            100% { transform: translateY(-80px) scale(3.8); opacity: 0; }
+        }
+
+        .smoke-particle {
+            animation: smokeRise 1.6s ease-out forwards;
+        }
+
+        /* Nichirin Slash Overlay Effect */
+        @keyframes swordSlash {
+            0% { opacity: 0; transform: translate(-50%, -50%) rotate(-45deg) scaleX(0.1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) rotate(-45deg) scaleX(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) rotate(-45deg) scaleX(1.5); }
+        }
+
+        .slash-effect {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            height: 6px;
+            width: 300px;
+            background: linear-gradient(90deg, transparent, #34d399, #f59e0b, #ef4444, transparent);
+            box-shadow: 0 0 20px #10B981, 0 0 30px #ef4444;
+            animation: swordSlash 0.3s ease-out forwards;
+        }
+
+        /* Pulse Glow for Engagement Ring */
+        @keyframes ringPulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
+            50% { box-shadow: 0 0 35px rgba(245, 158, 11, 0.85); }
+        }
+
+        .ring-glow {
+            animation: ringPulse 2.2s infinite;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #06080b; }
+        ::-webkit-scrollbar-thumb { background: #232c3d; border-radius: 4px; }
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col justify-between">
+
+    <canvas id="particle-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"></canvas>
+
+    <header class="relative z-10 max-w-6xl w-full mx-auto px-4 pt-4">
+        <div class="h-2.5 w-full rounded-t-lg tanjiro-trim mb-2"></div>
+        
+        <div class="bg-slate-900/90 border-2 border-slate-700 rounded-xl p-3 sm:p-5 flex flex-wrap justify-between items-center shadow-2xl backdrop-blur-md gap-4">
+            
+            <!-- Wizard / Hashira Character Card -->
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-emerald-950 border-2 border-emerald-400 flex items-center justify-center text-emerald-300 text-2xl sm:text-3xl shadow-lg relative">
+                    <i class="fa-solid fa-hat-wizard"></i>
+                    <span class="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full border border-slate-900 flex items-center justify-center text-[9px] text-slate-950 font-bold">💍</span>
+                </div>
+                <div>
+                    <h1 class="font-pixel text-xl sm:text-2xl text-emerald-300 tracking-wider flex items-center gap-2">
+                        BAGGA <span class="text-xs sm:text-sm text-amber-300 font-sans">[NAGGI • SCHATZI]</span>
+                    </h1>
+                    <p class="font-pixel text-xs sm:text-sm text-slate-400">
+                        TITLE: <span class="text-amber-300 font-bold">ARCHMAGE OF JULIA'S HEART</span> • LEVEL: <span class="text-emerald-400 font-bold">5 YRS ENGAGED 💍</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Rift Wizard HUD Stats -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-4 font-pixel text-xs sm:text-sm">
+                <div class="flex items-center space-x-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-red-900/80">
+                    <i class="fa-solid fa-heart text-red-500"></i>
+                    <span class="text-slate-400">HP:</span>
+                    <span class="text-red-400 font-bold">100/100 (LOVE MAX)</span>
+                </div>
+                <div class="flex items-center space-x-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-emerald-900/80">
+                    <i class="fa-solid fa-wand-magic-sparkles text-emerald-400"></i>
+                    <span class="text-slate-400">MP:</span>
+                    <span class="text-emerald-400 font-bold">∞ (JULIA'S DEVOTION)</span>
+                </div>
+
+                <!-- Web Audio Synth Toggle -->
+                <button id="sound-btn" onclick="toggleSound()" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-slate-300 hover:text-white hover:border-emerald-400 transition-all font-pixel flex items-center space-x-2">
+                    <i id="sound-icon" class="fa-solid fa-volume-xmark text-red-400"></i>
+                    <span id="sound-label">SOUND: OFF</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <main class="relative z-10 max-w-6xl w-full mx-auto px-4 py-6 flex-grow space-y-8">
+
+        <!-- Title Chalkboard Banner -->
+        <section class="text-center">
+            <div class="chalk-board p-6 sm:p-8 rounded-2xl border-4 border-slate-700">
+                <div class="tanjiro-trim absolute inset-x-0 top-0 h-2 rounded-t-lg opacity-40"></div>
+                <p class="font-pixel text-amber-300 text-base sm:text-xl tracking-widest uppercase mb-1">
+                    ✦ RIFT WIZARD × DEMON SLAYER BIRTHDAY SPELLBOOK ✦
+                </p>
+                <h2 class="font-arcane text-3xl sm:text-5xl md:text-6xl text-slate-100 tracking-wider my-2 drop-shadow-[0_0_20px_rgba(16,185,129,0.5)]">
+                    HAPPY BIRTHDAY SCHATZI!
+                </h2>
+                <p class="text-xl sm:text-2xl text-slate-300 font-hand mt-2">
+                    To my fiancé <span class="text-emerald-300 font-bold">Bagga</span> (a.k.a. <span class="text-teal-300 font-bold">Naggi</span>)! My ultimate Hashira & favorite Rift Wizard — with all my love, <span class="text-pink-300 font-bold">Julia</span>.
+                </p>
+            </div>
+        </section>
+
+        <!-- Quest Navigation Buttons -->
+        <div class="flex flex-wrap justify-center gap-3 sm:gap-4 font-pixel text-base sm:text-xl">
+            <button id="tab-quest1" onclick="switchQuest(1)" class="px-4 sm:px-5 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-950/80 text-emerald-300 shadow-lg font-bold flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <span>QUEST 1: 5-YEAR REALM GRID</span>
+            </button>
+            <button id="tab-quest2" onclick="switchQuest(2)" class="px-4 sm:px-5 py-2.5 rounded-xl border-2 border-slate-700 bg-slate-900/80 text-slate-400 hover:text-amber-300 hover:border-amber-400 shadow-lg font-bold flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-cake-candles"></i>
+                <span>QUEST 2: RITUAL OF FIRE</span>
+            </button>
+            <button id="tab-quest3" onclick="switchQuest(3)" class="px-4 sm:px-5 py-2.5 rounded-xl border-2 border-slate-700 bg-slate-900/80 text-slate-400 hover:text-pink-300 hover:border-pink-400 shadow-lg font-bold flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-envelope-open-text"></i>
+                <span>QUEST 3: SACRED LOVE SCROLL</span>
+            </button>
+        </div>
+
+        <div id="quest1-view" class="space-y-8">
+            <section class="chalk-board p-5 sm:p-7 rounded-2xl">
+                <div class="border-b-2 border-dashed border-slate-700 pb-4 mb-6 text-center">
+                    <h3 class="font-pixel text-2xl sm:text-3xl text-amber-300">
+                        [ QUEST 1: CHRONICLES OF THE 5-YEAR REALM ]
+                    </h3>
+                    <p class="text-slate-400 text-sm sm:text-base mt-1">Tap each timeline node on the chalkboard grid to trigger Nichirin slashes and unlock our journey!</p>
+                </div>
+
+                <!-- Timeline Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+                    <!-- Year 1 -->
+                    <div id="timeline-card-0" onclick="triggerTimelineNode(0, event)" class="grid-cell p-5 rounded-xl cursor-pointer group relative overflow-hidden">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <div class="w-12 h-12 rounded-lg bg-emerald-950 border border-emerald-400 flex items-center justify-center text-emerald-300 text-2xl font-pixel shrink-0">✨</div>
+                            <div>
+                                <h4 class="font-pixel text-lg text-emerald-300 group-hover:text-emerald-200">YEAR 1: FIRST MEET</h4>
+                                <p class="font-pixel text-xs text-amber-300">SPELL: "SPARK OF DESTINY"</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 text-sm italic font-hand">"The moment our rifts crossed and our magical adventure began!"</p>
+                        <div class="mt-4 text-xs font-pixel text-emerald-400 flex justify-between items-center">
+                            <span id="timeline-status-0">STATUS: READY TO UNSEAL</span>
+                            <span class="group-hover:translate-x-1 transition-transform">INSPECT ➔</span>
+                        </div>
+                    </div>
+
+                    <!-- Year 2-3 -->
+                    <div id="timeline-card-1" onclick="triggerTimelineNode(1, event)" class="grid-cell p-5 rounded-xl cursor-pointer group relative overflow-hidden">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <div class="w-12 h-12 rounded-lg bg-red-950 border border-red-500 flex items-center justify-center text-red-400 text-2xl font-pixel shrink-0">🎬</div>
+                            <div>
+                                <h4 class="font-pixel text-lg text-red-400 group-hover:text-red-300">YEAR 2-3: MOVIES & COOKING</h4>
+                                <p class="font-pixel text-xs text-amber-300">SPELL: "FLAME & WATER BREATHING"</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 text-sm italic font-hand">"Cozy cooking nights, delicious meals, & Demon Slayer marathons!"</p>
+                        <div class="mt-4 text-xs font-pixel text-red-400 flex justify-between items-center">
+                            <span id="timeline-status-1">STATUS: READY TO UNSEAL</span>
+                            <span class="group-hover:translate-x-1 transition-transform">INSPECT ➔</span>
+                        </div>
+                    </div>
+
+                    <!-- Year 4 -->
+                    <div id="timeline-card-2" onclick="triggerTimelineNode(2, event)" class="grid-cell p-5 rounded-xl cursor-pointer group relative overflow-hidden">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <div class="w-12 h-12 rounded-lg bg-purple-950 border border-purple-400 flex items-center justify-center text-purple-300 text-2xl font-pixel shrink-0">🏡</div>
+                            <div>
+                                <h4 class="font-pixel text-lg text-purple-300 group-hover:text-purple-200">YEAR 4: MOVED IN TOGETHER</h4>
+                                <p class="font-pixel text-xs text-amber-300">SPELL: "DOMAIN: SHARED HOME"</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 text-sm italic font-hand">"Building our cozy home sanctuary together."</p>
+                        <div class="mt-4 text-xs font-pixel text-purple-400 flex justify-between items-center">
+                            <span id="timeline-status-2">STATUS: READY TO UNSEAL</span>
+                            <span class="group-hover:translate-x-1 transition-transform">INSPECT ➔</span>
+                        </div>
+                    </div>
+
+                    <!-- Year 5 -->
+                    <div id="timeline-card-3" onclick="triggerTimelineNode(3, event)" class="grid-cell p-5 rounded-xl cursor-pointer group relative overflow-hidden border-amber-500/60 bg-amber-950/20">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <div class="w-12 h-12 rounded-lg bg-amber-950 border border-amber-400 flex items-center justify-center text-amber-300 text-2xl font-pixel shrink-0">💍</div>
+                            <div>
+                                <h4 class="font-pixel text-lg text-amber-300 group-hover:text-amber-200">YEAR 5: ENGAGED!</h4>
+                                <p class="font-pixel text-xs text-amber-300">SPELL: "RING OF ETERNAL OATH"</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 text-sm italic font-hand">"5 magical years culminating in our dream engagement!"</p>
+                        <div class="mt-4 text-xs font-pixel text-amber-400 flex justify-between items-center">
+                            <span id="timeline-status-3">STATUS: READY TO UNSEAL</span>
+                            <span class="group-hover:translate-x-1 transition-transform">INSPECT ➔</span>
+                        </div>
+                    </div>
+
+                    <!-- Today -->
+                    <div id="timeline-card-4" onclick="triggerTimelineNode(4, event)" class="grid-cell p-5 rounded-xl cursor-pointer group relative overflow-hidden border-pink-500/60 bg-pink-950/20 sm:col-span-2 lg:col-span-2">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <div class="w-12 h-12 rounded-lg bg-pink-950 border border-pink-400 flex items-center justify-center text-pink-300 text-2xl font-pixel shrink-0">👑</div>
+                            <div>
+                                <h4 class="font-pixel text-xl text-pink-300 group-hover:text-pink-200">TODAY: BIRTHDAY BOY!</h4>
+                                <p class="font-pixel text-xs text-amber-300">SPELL: "SUN BREATHING: ROYAL BIRTHDAY"</p>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 text-base italic font-hand">"Celebrating Bagga (a.k.a. Naggi / Schatzi) on his special day with endless love!"</p>
+                        <div class="mt-4 text-xs font-pixel text-pink-400 flex justify-between items-center">
+                            <span id="timeline-status-4">STATUS: READY TO UNSEAL</span>
+                            <span class="group-hover:translate-x-1 transition-transform">CELEBRATE ➔</span>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="text-center">
+                <button onclick="switchQuest(2)" class="px-8 py-4 rounded-xl bg-gradient-to-r from-amber-500 via-emerald-600 to-teal-600 hover:from-amber-400 hover:to-emerald-500 text-slate-950 font-retro text-xs sm:text-sm tracking-wider shadow-2xl transform active:scale-95 transition-all border-2 border-amber-300 flex items-center justify-center mx-auto space-x-3">
+                    <i class="fa-solid fa-cake-candles"></i>
+                    <span>PROCEED TO QUEST 2: RITUAL OF FIRE ➔</span>
+                </button>
+            </section>
+        </div>
+
+        <div id="quest2-view" class="space-y-8 hidden">
+            <section class="chalk-board p-6 sm:p-10 rounded-2xl text-center relative overflow-hidden">
+                <div class="tanjiro-trim absolute inset-x-0 top-0 h-2 rounded-t-lg opacity-30"></div>
+
+                <p class="font-pixel text-amber-300 text-lg sm:text-xl tracking-widest uppercase mb-1">
+                    ✦ QUEST 2: THE SACRED BIRTHDAY RITUAL OF FIRE ✦
+                </p>
+                <h3 class="font-arcane text-3xl sm:text-4xl text-slate-100 tracking-wider my-2">
+                    MAKE A WISH, SCHATZI!
+                </h3>
+                <p class="text-slate-300 text-lg sm:text-xl font-hand max-w-xl mx-auto mb-8">
+                    Tap the glowing Nichirin candle flame on the chalkboard altar to blow out the candle, make a wish, and unleash victory confetti!
+                </p>
+
+                <!-- Interactive Candle Pedestal -->
+                <div class="relative inline-block my-4">
+                    
+                    <div id="candle-container" onclick="blowOutCandle()" class="cursor-pointer group relative inline-flex flex-col items-center">
+                        
+                        <!-- Candle Flame -->
+                        <div id="candle-flame" class="relative mb-[-8px] transition-all group-hover:scale-125 z-20">
+                            <div class="w-10 h-14 bg-gradient-to-t from-orange-500 via-amber-400 to-yellow-200 rounded-full candle-flame flex items-center justify-center shadow-[0_0_40px_#f97316]">
+                                <div class="w-4 h-7 bg-white rounded-full"></div>
+                            </div>
+                        </div>
+
+                        <!-- Smoke Container -->
+                        <div id="smoke-container" class="absolute -top-12 inset-x-0 flex justify-center pointer-events-none z-30"></div>
+
+                        <!-- Candle Wick -->
+                        <div class="w-1.5 h-4 bg-slate-900 z-10"></div>
+
+                        <!-- Wax Candle Body with Tanjiro Pattern -->
+                        <div class="w-14 h-36 sm:w-16 sm:h-44 rounded-t-lg border-2 border-emerald-400/80 shadow-2xl relative overflow-hidden flex flex-col justify-between p-1.5 z-10" style="background: linear-gradient(180deg, #064E3B 0%, #0f172a 100%);">
+                            <div class="w-full h-full tanjiro-trim opacity-40 rounded"></div>
+                            <div class="absolute top-0 inset-x-0 h-4 bg-emerald-300/30 rounded-b-lg"></div>
+                        </div>
+
+                        <!-- Altar Base -->
+                        <div class="w-32 sm:w-40 h-8 bg-slate-900 border-2 border-slate-600 rounded-lg shadow-2xl flex items-center justify-center font-pixel text-xs text-amber-300 border-t-amber-400 z-10">
+                            [ ALTAR OF WISHES ]
+                        </div>
+
+                    </div>
+
+                    <div class="mt-6">
+                        <button id="wish-btn" onclick="blowOutCandle()" class="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-pixel text-xl tracking-wider shadow-xl transform active:scale-95 transition-all border-2 border-amber-200 flex items-center justify-center mx-auto space-x-2">
+                            <i class="fa-solid fa-wind"></i>
+                            <span id="wish-btn-text">BLOW OUT CANDLE & MAKE A WISH!</span>
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="text-center">
+                <button onclick="switchQuest(3)" class="px-8 py-4 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-400 hover:to-purple-500 text-slate-950 font-retro text-xs sm:text-sm tracking-wider shadow-2xl transform active:scale-95 transition-all border-2 border-pink-300 flex items-center justify-center mx-auto space-x-3">
+                    <i class="fa-solid fa-envelope-open-text"></i>
+                    <span>READ QUEST 3: THE SACRED LOVE SCROLL ➔</span>
+                </button>
+            </section>
+        </div>
+
+        <div id="quest3-view" class="space-y-8 hidden">
+            <section class="chalk-board p-6 sm:p-10 rounded-2xl relative overflow-hidden ring-glow">
+                <div class="tanjiro-trim absolute inset-0 opacity-10 pointer-events-none"></div>
+
+                <div class="max-w-3xl mx-auto space-y-6 relative z-10">
+                    
+                    <div class="flex items-center justify-between border-b-2 border-dashed border-slate-700 pb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded-xl bg-amber-950 border-2 border-amber-400 flex items-center justify-center text-amber-300 text-2xl font-pixel">
+                                💍
+                            </div>
+                            <div>
+                                <h3 class="font-pixel text-2xl sm:text-3xl text-amber-300">
+                                    THE SACRED LOVE SCROLL
+                                </h3>
+                                <p class="font-pixel text-xs text-emerald-400">
+                                    FOR BAGGA • A.K.A. NAGGI • A.K.A. SCHATZI — FROM JULIA
+                                </p>
+                            </div>
+                        </div>
+                        <span class="font-pixel text-xs text-slate-400 hidden sm:inline-block">SEALED WITH ETERNAL LOVE</span>
+                    </div>
+
+                    <!-- Elemental Breathing Metaphors Section -->
+                    <div class="bg-slate-900/90 border-l-4 border-amber-400 p-5 rounded-r-xl space-y-3 text-lg sm:text-xl font-hand">
+                        <h4 class="font-pixel text-amber-300 text-xl tracking-wider mb-2">✦ BREATHING TECHNIQUES OF OUR LOVE ✦</h4>
+                        <p>
+                            🔥 <strong class="text-amber-300">Flame Breathing: First Form — Unwavering Warmth:</strong> Like Rengoku's burning spirit, your kindness and enthusiasm light up every room we enter. Your passion brings so much joy into my life.
+                        </p>
+                        <p>
+                            🌊 <strong class="text-teal-300">Water Breathing: Eleventh Form — Tranquil Flow:</strong> Like Giyu's calm surface, you bring peace, comfort, and unwavering reliability whenever I need you most.
+                        </p>
+                        <p>
+                            ⚡ <strong class="text-yellow-300">Thunder Breathing: First Form — Lightning Spark:</strong> The electric excitement of every adventure, trip, and game we play together.
+                        </p>
+                        <p>
+                            ☀️ <strong class="text-amber-400">Sun Breathing: Hinokami Kagura — Eternal Sun:</strong> The ancient, unbreakable bond of love that burns in our hearts and guides us through every rift and battle.
+                        </p>
+                    </div>
+
+                    <!-- Julia's EXACT Personal German Letter -->
+                    <div class="bg-slate-950/90 p-6 sm:p-8 rounded-xl border border-slate-800 shadow-inner relative overflow-hidden">
+                        <div class="absolute top-2 right-3 font-pixel text-xs text-pink-400/60">✦ FROM YOUR FIANCÉE JULIA ✦</div>
+                        
+                        <p class="font-letter text-2xl sm:text-3xl text-amber-200 leading-relaxed tracking-wide pt-2">
+                            "Mein Schatzi, ich wünsche dir Alles Liebe und Gute zum Geburtstag. Ich bin so unendlich dankbar für jeden Moment, den ich mit dir teilen darf. Einfach nur deine Stimme zu hören, dich zu riechen, der Klang vom Schlüssel im Schloss, wenn du nach einer langen Schicht zu mir nach Hause kommst, erfüllt mich mit unendlich viel Liebe und Dankbarkeit. Ich liebe unsere gemeinsamen Serienabende, unsere gemeinsamen Abenteuer im Urlaub, aber am meisten liebe ich die kleinen gemeinsamen Momente im Alltag. Ich freue mich unendlich darauf, noch unendlich viele Geburtstage mit dir verbringen zu dürfen. Ich liebe dich sehr, deine Julia"
+                        </p>
+
+                        <div class="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap justify-between items-center text-sm font-pixel text-emerald-400">
+                            <span>5 YEARS & FOREVER ENGAGED</span>
+                            <span class="text-pink-300">❤️ ICH LIEBE DICH SEHR ❤️</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center pt-2">
+                        <button onclick="triggerFullConfettiBurst()" class="px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-pixel text-base border border-amber-500/50 flex items-center justify-center mx-auto space-x-2">
+                            <i class="fa-solid fa-sparkles"></i>
+                            <span>RE-TRIGGER BIRTHDAY CONFETTI CANNONS!</span>
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <div id="game-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div id="modal-container" class="chalk-board max-w-xl w-full p-6 sm:p-8 rounded-2xl border-2 border-emerald-400 shadow-2xl relative transform transition-all scale-90 opacity-0">
+            
+            <button onclick="closeGameModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white font-pixel text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800">
+                ✕
+            </button>
+
+            <div class="flex items-center space-x-4 mb-4 border-b border-slate-700/80 pb-4">
+                <div id="modal-badge" class="w-14 h-14 rounded-xl bg-slate-900 border-2 border-emerald-400 flex items-center justify-center text-emerald-300 text-2xl font-pixel shrink-0">
+                    ✨
+                </div>
+                <div>
+                    <h3 id="modal-heading" class="font-pixel text-2xl sm:text-3xl text-amber-300">HEADER</h3>
+                    <p id="modal-subheading" class="font-pixel text-xs text-emerald-400">SUBTITLE</p>
+                </div>
+            </div>
+
+            <div class="py-2">
+                <p id="modal-message" class="text-slate-100 text-xl font-hand leading-relaxed">
+                    Message content...
+                </p>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-800 flex justify-between items-center">
+                <span class="font-pixel text-xs text-slate-400">REWARD: +100 LOVE MANA</span>
+                <button onclick="closeGameModal()" class="px-5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 font-pixel text-sm border border-emerald-500/40">
+                    CLOSE SCROLL
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="relative z-10 text-center py-6 border-t border-slate-800/80 font-pixel text-xs text-slate-500">
+        <p>MADE WITH ENDLESS LOVE BY JULIA FOR BAGGA (NAGGI / SCHATZI) • 5 YEARS ENGAGED • HAPPY BIRTHDAY!</p>
+    </footer>
+
+    <script>
+        // Web Audio Synthesizer
+        let audioCtx = null;
+        let isAudioOn = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function toggleSound() {
+            initAudio();
+            isAudioOn = !isAudioOn;
+            const icon = document.getElementById('sound-icon');
+            const label = document.getElementById('sound-label');
+
+            if (isAudioOn) {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                icon.className = 'fa-solid fa-volume-high text-emerald-400';
+                label.innerText = 'SOUND: ON';
+                playRetroChime();
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-red-400';
+                label.innerText = 'SOUND: OFF';
+            }
+        }
+
+        function playRetroChime() {
+            if (!isAudioOn || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.setValueAtTime(659.25, now + 0.08);
+            osc.frequency.setValueAtTime(783.99, now + 0.16);
+            osc.frequency.setValueAtTime(1046.50, now + 0.24);
+
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.4);
+        }
+
+        function playSlashSound() {
+            if (!isAudioOn || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.15);
+
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+
+        function playPuffSound() {
+            if (!isAudioOn || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.25);
+
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.25);
+        }
+
+        // Timeline Nodes Data
+        const timelineData = [
+            {
+                heading: "YEAR 1: FIRST MEET",
+                subheading: "Spell: Spark of Destiny",
+                badge: "✨",
+                message: "The moment Bagga stepped into my world! The rifts aligned and our magical adventure began. From that very first day, I knew you were someone special."
+            },
+            {
+                heading: "YEAR 2-3: MOVIE & COOKING NIGHTS",
+                subheading: "Spell: Flame & Water Breathing",
+                badge: "🎬",
+                message: "Cozy evenings filled with cooking delicious food together, sharing laughter, and binging Demon Slayer marathons side by side. Pure happiness with my Naggi!"
+            },
+            {
+                heading: "YEAR 4: MOVED IN TOGETHER",
+                subheading: "Spell: Domain Expansion: Shared Home",
+                badge: "🏡",
+                message: "Creating our cozy sanctuary together! Hearing your key in the lock coming home to me makes every single day complete."
+            },
+            {
+                heading: "YEAR 5: HAPPILY ENGAGED! 💍",
+                subheading: "Spell: Ring of Eternal Oath",
+                badge: "💍",
+                message: "5 magical years together culminating in our engagement! Saying YES to my dream guy, fiancé, and life partner, Schatzi!"
+            },
+            {
+                heading: "TODAY: BIRTHDAY BOY!",
+                subheading: "Spell: Sun Breathing: Royal Birthday",
+                badge: "👑",
+                message: "HAPPY BIRTHDAY TO BAGGA (NAGGI / SCHATZI)! Wishing you the absolute best year full of victory, warmth, and endless love from Julia!"
+            }
+        ];
+
+        let clearedTimelineNodes = new Set();
+        let candleIsLit = true;
+
+        // Visual Nichirin Slash Animation
+        function createSlashEffect(e) {
+            const slash = document.createElement('div');
+            slash.className = 'slash-effect';
+            slash.style.left = `${e.clientX}px`;
+            slash.style.top = `${e.clientY}px`;
+            document.body.appendChild(slash);
+            setTimeout(() => slash.remove(), 300);
+        }
+
+        // Switch Quests
+        function switchQuest(questNumber) {
+            playRetroChime();
+            const q1 = document.getElementById('quest1-view');
+            const q2 = document.getElementById('quest2-view');
+            const q3 = document.getElementById('quest3-view');
+
+            const tab1 = document.getElementById('tab-quest1');
+            const tab2 = document.getElementById('tab-quest2');
+            const tab3 = document.getElementById('tab-quest3');
+
+            q1.classList.add('hidden');
+            q2.classList.add('hidden');
+            q3.classList.add('hidden');
+
+            tab1.className = "px-4 sm:px-5 py-2.5 rounded-xl border-2 border-slate-700 bg-slate-900/80 text-slate-400 hover:text-emerald-300 shadow-lg font-bold flex items-center space-x-2 transition-all";
+            tab2.className = "px-4 sm:px-5 py-2.5 rounded-xl border-2 border-slate-700 bg-slate-900/80 text-slate-400 hover:text-amber-300 shadow-lg font-bold flex items-center space-x-2 transition-all";
+            tab3.className = "px-4 sm:px-5 py-2.5 rounded-xl border-2 border-slate-700 bg-slate-900/80 text-slate-400 hover:text-pink-300 shadow-lg font-bold flex items-center space-x-2 transition-all";
+
+            if (questNumber === 1) {
+                q1.classList.remove('hidden');
+                tab1.className = "px-4 sm:px-5 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-950/80 text-emerald-300 shadow-lg font-bold flex items-center space-x-2 transition-all";
+            } else if (questNumber === 2) {
+                q2.classList.remove('hidden');
+                tab2.className = "px-4 sm:px-5 py-2.5 rounded-xl border-2 border-amber-400 bg-amber-950/80 text-amber-300 shadow-lg font-bold flex items-center space-x-2 transition-all";
+            } else {
+                q3.classList.remove('hidden');
+                tab3.className = "px-4 sm:px-5 py-2.5 rounded-xl border-2 border-pink-400 bg-pink-950/80 text-pink-300 shadow-lg font-bold flex items-center space-x-2 transition-all";
+            }
+        }
+
+        function triggerTimelineNode(index, event) {
+            playSlashSound();
+            if (event) createSlashEffect(event);
+
+            clearedTimelineNodes.add(index);
+
+            const card = document.getElementById(`timeline-card-${index}`);
+            const status = document.getElementById(`timeline-status-${index}`);
+            if (card && status) {
+                card.classList.add('cleared');
+                status.innerText = "STATUS: UNLOCKED ✨";
+                status.className = "text-amber-300 font-bold";
+            }
+
+            confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 }, colors: ['#10B981', '#F59E0B', '#34d399'] });
+
+            const node = timelineData[index];
+            showModal(node.heading, node.subheading, node.badge, node.message);
+        }
+
+        // Blow Out Wish Candle
+        function blowOutCandle() {
+            playPuffSound();
+            triggerFullConfettiBurst();
+
+            const flame = document.getElementById('candle-flame');
+            const btnText = document.getElementById('wish-btn-text');
+            const smokeContainer = document.getElementById('smoke-container');
+
+            if (candleIsLit) {
+                candleIsLit = false;
+                flame.style.opacity = '0';
+                flame.style.transform = 'scale(0)';
+                btnText.innerText = "WISH GRANTED! RELIGHT CANDLE 🕯️";
+
+                for (let i = 0; i < 6; i++) {
+                    const smoke = document.createElement('div');
+                    smoke.className = 'w-4 h-4 bg-slate-400 rounded-full smoke-particle absolute';
+                    smoke.style.left = `${(Math.random() - 0.5) * 20}px`;
+                    smokeContainer.appendChild(smoke);
+                    setTimeout(() => smoke.remove(), 1600);
+                }
+
+                showModal(
+                    "🎂 WISH CASTED TO THE RIFT!",
+                    "Happy Birthday Schatzi!",
+                    "🕯️",
+                    "Your birthday wish has been woven into the fabric of the realm! May all your rifts be victorious and our love forever strong! Ich liebe dich, Bagga — Deine Julia!"
+                );
+            } else {
+                candleIsLit = true;
+                flame.style.opacity = '1';
+                flame.style.transform = 'scale(1)';
+                btnText.innerText = "BLOW OUT CANDLE & MAKE A WISH!";
+            }
+        }
+
+        function showModal(heading, subheading, badge, message) {
+            document.getElementById('modal-heading').innerText = heading;
+            document.getElementById('modal-subheading').innerText = subheading;
+            document.getElementById('modal-badge').innerText = badge;
+            document.getElementById('modal-message').innerText = message;
+
+            const modal = document.getElementById('game-modal');
+            const container = document.getElementById('modal-container');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                container.classList.remove('scale-90', 'opacity-0');
+                container.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeGameModal() {
+            const container = document.getElementById('modal-container');
+            container.classList.remove('scale-100', 'opacity-100');
+            container.classList.add('scale-90', 'opacity-0');
+            setTimeout(() => {
+                document.getElementById('game-modal').classList.add('hidden');
+            }, 180);
+        }
+
+        function triggerFullConfettiBurst() {
+            const duration = 3 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 8,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#10B981', '#34d399', '#EF4444', '#F59E0B', '#FBCFE8', '#FBBF24']
+                });
+                confetti({
+                    particleCount: 8,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#10B981', '#34d399', '#EF4444', '#F59E0B', '#FBCFE8', '#FBBF24']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        // Particle Canvas Engine (Embers, Petals, Sparks)
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3.5 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.7;
+                this.speedY = -Math.random() * 0.8 - 0.2;
+                this.opacity = Math.random() * 0.6 + 0.2;
+
+                const r = Math.random();
+                if (r > 0.6) this.color = `rgba(16, 185, 129, ${this.opacity})`;
+                else if (r > 0.3) this.color = `rgba(251, 207, 232, ${this.opacity})`;
+                else this.color = `rgba(245, 158, 11, ${this.opacity * 0.8})`;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.y < -10 || this.x < -10 || this.x > canvas.width + 10) {
+                    this.reset();
+                    this.y = canvas.height + 10;
+                }
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
+        }
+
+        function renderParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(renderParticles);
+        }
+
+        window.onload = function() {
+            initParticles();
+            renderParticles();
+        };
+    </script>
+</body>
+</html>
